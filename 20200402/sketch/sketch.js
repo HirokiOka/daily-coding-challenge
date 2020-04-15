@@ -1,65 +1,86 @@
-let words = [];
-let word;
-let things = ["Play", "Love", "Eat", "Break", "Cut", "Draw", "Drink", "Forget", "Grow", "Hide", "Learn", "Run", "Think", "Cry", "Laugh", "Come", "Greet", "Sleep", "Fear", "Feel", "Sit", "Know", "Scream", "Sing", "Try", "Piss"];
+let system;
+let a = 0.0;
+
+
 
 function setup() {
 	createCanvas(600, 600);
-	textFont('Times new Roman');
-	for (let i = 0; i < things.length; i++) {
-		words[i] = new Word(things[i].toUpperCase(), random(width), random(height), random(30, 100), random(1, 3));
-	}
+	system = new ParticleSystem(createVector(width / 2, height * 2/3));
+	rectMode(CENTER);
 }
 
 function draw() {
 	background(0);
-	words.forEach((w) => {
-		w.draw();
-		w.update();
-	});
-	blendMode(BLEND);
+	for (let i = 0; i < 20; i++) {
+		system.addParticle();
+	}
+	system.run();
+	strokeWeight(1);
+	stroke(255);
+	fill(0);
+	rect(width / 2, height * 2/3, 200, 100);
+	push();
+	translate(width/2-100, height/2+50);
+	for (let i = 0; i < 50; i++) {
+		line(i * 4, 50, i * 4, 50 + sin(a) * 40.0);
+		a = a + TWO_PI / 50.0;
+	}
+	pop();
 }
 
-class Word {
-	constructor(text, x, y, maxTextSize, v) {
-		this.vector = random(1) > 1/2 ? 0 : 1;
-		if (this.vector === 0) {
-			this.text = text;
-		} else {
-			let newText = '';
-			for (let i = 0; i < text.length; i++) {
-				newText += text[i] + '\n';
-			}
-			this.text = newText;
-		}
-		
-		this.x = x;
-		this.y = y;
-		this.randomness = random(1) * 0.03;
-		this.color = 0;
-		this.interval = 500;
-		this.maxTextSize = maxTextSize;
-		this.velocity = v;
-		
+
+
+class Particle {
+	constructor(position) {
+		this.acceleration = createVector(0, -0.05);
+		this.velocity = createVector(random(-1, 1), random(-1, 0));
+		this.position = position.copy();
+		this.lifespan = 255;
 	}
 
-	draw() {
-		fill(this.color);
-		textSize(this.maxTextSize);
-		text(this.text, this.x, this.y);
+	run() {
+		this.update();
+		this.display();
 	}
 
 	update() {
-		if (this.vector === 0) {
-			this.x -= this.velocity;
-			if (this.x + this.interval < 0) {
-				this.x = width;
-			}
-		} else {
-			this.y -= this.velocity;
-			if (this.y + this.interval < 0) {
-				this.y = height;
+		this.velocity.add(this.acceleration);
+		this.position.add(this.velocity);
+		this.lifespan -= 2;
+	}
+
+	display() {
+		stroke(200, this.lifespan);
+		strokeWeight(random(3));
+		// noStroke();
+		// fill(250, this.lifespan);
+		// ellipse(this.position.x, this.position.y, random(12), random(12));
+		point(this.position.x, this.position.y);
+	}
+
+	isDead() {
+		return this.lifespan < 0;
+	}
+}
+
+class ParticleSystem {
+	constructor(position) {
+		this.origin = position.copy();
+		this.particles = [];
+	}
+	
+	addParticle() {
+		this.particles.push(new Particle(this.origin));
+	}
+
+	run() {
+		for (let i = this.particles.length - 1; i >= 0; i--) {
+			let p = this.particles[i];
+			p.run();
+			if (p.isDead()) {
+				this.particles.splice(i, 1);
 			}
 		}
-		this.color = abs(sin(frameCount * this.randomness)) * 255;
 	}
+	
 }
